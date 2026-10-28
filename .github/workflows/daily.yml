@@ -2,7 +2,7 @@ name: Daily dashboard
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # 06:00 UTC; GitHub may start scheduled runs a few minutes late
+    - cron: "17 */3 * * *"   # every 3 hours at :17 UTC; avoids the top-of-hour rush that delays scheduled runs
   workflow_dispatch:
   push:
     branches: [main]

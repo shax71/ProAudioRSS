@@ -14,6 +14,6 @@ python3 build.py --open        # build and open (default: last 7 days)
 
 ## Daily refresh
 
-Published at https://shax71.github.io/ProAudioRSS/ by `.github/workflows/daily.yml`, which rebuilds every day at 06:00 UTC and on every push to `main`. To rebuild now: `gh workflow run daily.yml`.
+Published at https://shax71.github.io/ProAudioRSS/ by `.github/workflows/daily.yml`, which rebuilds every 3 hours and on every push to `main`. The page only changes when it's rebuilt; opening it doesn't fetch the feeds. To rebuild now: `gh workflow run daily.yml`.
 
 Mutes and seen stories are stored in each browser, so they don't sync between devices.
