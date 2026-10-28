@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pro Audio Daily</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #ffffff; --ink: #1b1b1f; --muted: #6b6b75; --line: #e4e2dc;
+    --accent: #d9480f; --chip: #efede8; --new: #2f9e44;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121214; --panel: #1c1c20; --ink: #ececf0; --muted: #9a9aa6; --line: #2c2c33;
+      --accent: #ff8a4c; --chip: #26262c; --new: #69db7c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg);
+           border-bottom: 1px solid var(--line); padding: 16px 24px 12px; }
+  .top { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: transparent; color: var(--ink); padding: 6px 12px; cursor: pointer; font: inherit; font-size: 13px; }
+  .seg button.on { background: var(--ink); color: var(--bg); }
+  .chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 999px;
+          padding: 4px 10px; font-size: 12px; cursor: pointer; font: inherit; font-size: 12px; }
+  .chip.off { opacity: 0.4; text-decoration: line-through; }
+  input[type=search] { flex: 1 1 200px; min-width: 160px; padding: 6px 10px; border-radius: 8px;
+          border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; }
+  main { padding: 20px 24px 60px; }
+  .day { margin: 20px 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+          display: flex; flex-direction: column; cursor: pointer; transition: border-color .15s; }
+  .card:hover { border-color: var(--muted); }
+  .card .img { aspect-ratio: 16/9; background: var(--chip) center/cover no-repeat; }
+  .card .body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card .src { font-size: 12px; color: var(--accent); font-weight: 600; display: flex; gap: 8px; align-items: center; }
+  .card .src time { color: var(--muted); font-weight: 400; }
+  .badge-new { background: var(--new); color: #fff; border-radius: 4px; padding: 0 5px; font-size: 10px; letter-spacing: 0.05em; }
+  .card h2 { margin: 0; font-size: 16px; line-height: 1.3; }
+  .card h2 a { color: inherit; text-decoration: none; }
+  .card h2 a:hover { text-decoration: underline; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .also { margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--muted); }
+  .also a { color: var(--ink); }
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag { border: 1px solid var(--line); background: var(--chip); color: var(--muted); border-radius: 4px;
+         padding: 0 6px; font: inherit; font-size: 11px; line-height: 18px; cursor: pointer; }
+  .tag:hover { color: var(--accent); border-color: var(--accent); text-decoration: line-through; }
+  .muted-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .muted-bar .tag { text-decoration: none; }
+  .muted-bar .tag::after { content: " ×"; }
+  .muted-bar .tag:hover { text-decoration: none; color: var(--ink); }
+  .muted-bar input { width: 140px; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line);
+         background: var(--panel); color: var(--ink); font: inherit; font-size: 12px; }
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+  .errors { color: var(--accent); font-size: 12px; margin-top: 6px; }
+  @media (max-width: 600px) {
+    header, main { padding-left: 16px; padding-right: 16px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Pro Audio Daily</h1>
+    <span class="meta" id="meta"></span>
+  </div>
+  <div class="controls">
+    <div class="seg" id="range">
+      <button data-h="24" class="on">24h</button>
+      <button data-h="48">48h</button>
+      <button data-h="168">Week</button>
+    </div>
+    <span id="sources"></span>
+    <input type="search" id="q" placeholder="Filter by keyword…">
+  </div>
+  <div class="muted-bar">
+    <span>Muted:</span><span id="muted"></span>
+    <input id="muteWord" placeholder="+ mute keyword" title="Hide any story whose title or summary contains this word">
+    <span id="hiddenCount"></span>
+  </div>
+  <div class="errors" id="errors"></div>
+</header>
+<main id="main"></main>
+<script>
+const DATA = /*__DATA__*/null;
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const lastVisit = store.get("pad.lastVisit", null);
+store.set("pad.lastVisit", DATA.generated);
+
+// Mutes persist across rebuilds: tags by name, keywords as whole-word matches.
+const muted = store.get("pad.muted", { tags: [], words: [] });
+const saveMuted = () => { store.set("pad.muted", muted); renderMuted(); render(); };
+const wordRe = w => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+const isMuted = c => c.tags.some(t => muted.tags.includes(t)) ||
+  muted.words.some(w => wordRe(w).test(c.title + " " + c.summary));
+function muteTag(t) { if (!muted.tags.includes(t)) { muted.tags.push(t); saveMuted(); } }
+function renderMuted() {
+  const el = document.getElementById("muted");
+  const items = [...muted.tags.map(t => ["tags", t]), ...muted.words.map(w => ["words", w])];
+  el.innerHTML = items.length ? "" : "nothing — click a tag on any card to hide stories like it";
+  for (const [kind, v] of items) {
+    const b = document.createElement("button");
+    b.className = "tag"; b.textContent = kind === "words" ? `“${v}”` : v; b.title = "Unmute";
+    b.onclick = () => { muted[kind] = muted[kind].filter(x => x !== v); saveMuted(); };
+    el.append(b, " ");
+  }
+}
+document.getElementById("muteWord").onkeydown = e => {
+  const w = e.target.value.trim();
+  if (e.key === "Enter" && w && !muted.words.includes(w)) { muted.words.push(w); e.target.value = ""; saveMuted(); }
+};
+document.getElementById("main").onclick = e => {
+  const t = e.target.closest("button.tag[data-tag]");
+  if (t) return muteTag(t.dataset.tag);
+  // Anywhere else on a card opens the story; real links already open their own tab.
+  const card = e.target.closest("article.card");
+  if (card && !e.target.closest("a, button") && !getSelection().toString()) {
+    window.open(card.dataset.link, "_blank", "noopener");
+  }
+};
+
+const state = { hours: store.get("pad.hours", 24), hidden: new Set(store.get("pad.hidden", [])), q: "" };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtTime = d => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const fmtDay = d => {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const day = new Date(d); day.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - day) / 864e5);
+  return diff === 0 ? "Today" : diff === 1 ? "Yesterday" : d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+};
+
+const gen = new Date(DATA.generated);
+const merged = DATA.cards.reduce((n, c) => n + c.dupes, 0);
+document.getElementById("meta").textContent =
+  `Updated ${gen.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })} · ${DATA.fetched} articles · ${merged} duplicates merged`;
+if (DATA.errors.length) document.getElementById("errors").textContent = "Feed problems: " + DATA.errors.join("; ");
+
+const srcEl = document.getElementById("sources");
+DATA.sources.forEach(s => {
+  const b = document.createElement("button");
+  b.className = "chip" + (state.hidden.has(s) ? " off" : "");
+  b.textContent = s;
+  b.onclick = () => {
+    state.hidden.has(s) ? state.hidden.delete(s) : state.hidden.add(s);
+    b.classList.toggle("off");
+    store.set("pad.hidden", [...state.hidden]);
+    render();
+  };
+  srcEl.append(b, " ");
+});
+document.querySelectorAll("#range button").forEach(b => {
+  b.classList.toggle("on", +b.dataset.h === state.hours);
+  b.onclick = () => {
+    state.hours = +b.dataset.h; store.set("pad.hours", state.hours);
+    document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x === b));
+    render();
+  };
+});
+document.getElementById("q").oninput = e => { state.q = e.target.value.toLowerCase(); render(); };
+
+function render() {
+  const cutoff = gen.getTime() - state.hours * 3600e3;
+  let hidden = 0;
+  const cards = DATA.cards.filter(c => {
+    const t = c.date ? Date.parse(c.date) : gen.getTime();
+    if (t < cutoff) return false;
+    if (isMuted(c)) { hidden++; return false; }
+    const srcs = [c.source, ...c.also.map(a => a.source)];
+    if (srcs.every(s => state.hidden.has(s))) return false;
+    if (state.q && !(c.title + " " + c.summary + " " + c.categories.join(" ")).toLowerCase().includes(state.q)) return false;
+    return true;
+  });
+  document.getElementById("hiddenCount").textContent = hidden ? `· ${hidden} hidden in this range` : "";
+  const main = document.getElementById("main");
+  if (!cards.length) { main.innerHTML = `<div class="empty">Nothing in this window. Try a longer range.</div>`; return; }
+  let html = "", day = null;
+  for (const c of cards) {
+    const d = c.date ? new Date(c.date) : gen;
+    const label = fmtDay(d);
+    if (label !== day) { if (day !== null) html += "</div>"; html += `<div class="day">${label}</div><div class="grid">`; day = label; }
+    const isNew = lastVisit && c.date && c.date > lastVisit;
+    const also = c.also.length
+      ? `<div class="also">Also covered by ${c.also.map(a => `<a href="${esc(a.link)}" target="_blank" rel="noopener">${esc(a.source)}</a>`).join(", ")}</div>` : "";
+    html += `<article class="card" data-link="${esc(c.link)}">
+      ${c.image ? `<a href="${esc(c.link)}" target="_blank" rel="noopener" class="img" style="background-image:url('${esc(c.image)}')"></a>` : ""}
+      <div class="body">
+        <div class="src">${esc(c.source)} <time>${fmtTime(d)}</time>${isNew ? `<span class="badge-new">NEW</span>` : ""}</div>
+        <h2><a href="${esc(c.link)}" target="_blank" rel="noopener">${esc(c.title)}</a></h2>
+        <p>${esc(c.summary)}</p>
+        ${c.tags.length ? `<div class="tags">${c.tags.map(t => `<button class="tag" data-tag="${esc(t)}" title="Hide all ${esc(t)} stories">${esc(t)}</button>`).join("")}</div>` : ""}
+        ${also}
+      </div>
+    </article>`;
+  }
+  main.innerHTML = html + "</div>";
+}
+renderMuted();
+render();
+</script>
+</body>
+</html>
